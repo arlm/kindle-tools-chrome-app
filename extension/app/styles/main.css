@@ -1,0 +1,6 @@
+/* Will be compiled down to a single stylesheet if you use grunt watch for SASS pre-processing */
+
+html {
+  /* Defaults css for cssmin process */
+  background-color: transparent;
+}
