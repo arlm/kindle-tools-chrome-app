@@ -11,14 +11,30 @@ export class AppComponent {
   connected = false;
   buttonText = 'Connect to Kindle device';
 
-  constructor(public snackBar: MatSnackBar) {}
+  constructor(public snackBar: MatSnackBar) {
+    navigator.usb.getDevices({filters: [{ vendorId: 0x1949 }]}).then(devices => {
+      if (devices.length === 1) {
+        const device = devices[0];
+        if (device.productId === 0x0002 || device.productId === 0x0004) {
+          this.connected = true;
+          this.buttonText = `Connected to the ${device.productName}`;
+            this.snackBar.open(`Connected to the "${device.productName}" device!`, 'OK', {
+            duration: 2000,
+          });
+        } else {
+          this.connected = false;
+          this.buttonText = 'Connect to Kindle device';
+        }
+      }
+    });
+  }
 
   connectKindle = function () {
     navigator.usb.requestDevice({filters: [{ vendorId: 0x1949 }]}).then(device => {
-        this.connected = true;
-        this.buttonText = 'Connected to Kindle device';
         if (device.productId === 0x0002 || device.productId === 0x0004) {
-          this.snackBar.open(`Connected to the "${device.productName}" device!`, 'OK', {
+          this.connected = true;
+          this.buttonText = `Connected to the ${device.productName}`;
+            this.snackBar.open(`Connected to the "${device.productName}" device!`, 'OK', {
             duration: 2000,
           });
         } else {
@@ -36,6 +52,7 @@ declare global {
   interface Navigator {
       usb: {
         requestDevice(filters: any): any;
+        getDevices(filters: any): any;
       };
   }
 }
