@@ -7,12 +7,14 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { AppComponent } from './app.component';
 import { BooksComponent } from './books/books.component';
+import { ClippingsComponent } from './clippings/clippings.component';
 
 
 @NgModule({
   declarations: [
     AppComponent,
-    BooksComponent
+    BooksComponent,
+    ClippingsComponent
   ],
   imports: [
     BrowserModule,

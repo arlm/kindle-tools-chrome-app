@@ -9,7 +9,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 export class AppComponent {
   title = 'Kindle Tool Angular App';
   connected = false;
+  processed = false;
   buttonText = 'Connect to Kindle device';
+  documents_dir = '';
+  clippings_file = '';
 
   constructor(public snackBar: MatSnackBar) {
     navigator.usb.getDevices({filters: [{ vendorId: 0x1949 }]}).then(devices => {
@@ -18,34 +21,51 @@ export class AppComponent {
         if (device.productId === 0x0002 || device.productId === 0x0004) {
           this.connected = true;
           this.buttonText = `Connected to the ${device.productName}`;
-            this.snackBar.open(`Connected to the "${device.productName}" device!`, 'OK', {
+          this.snackBar.open(`Connected to the "${device.productName}" device!`, 'OK', {
             duration: 2000,
           });
         } else {
-          this.connected = false;
-          this.buttonText = 'Connect to Kindle device';
+          this.errorState();
         }
       }
     });
   }
 
-  connectKindle = function () {
+  connectKindle() {
     navigator.usb.requestDevice({filters: [{ vendorId: 0x1949 }]}).then(device => {
         if (device.productId === 0x0002 || device.productId === 0x0004) {
           this.connected = true;
           this.buttonText = `Connected to the ${device.productName}`;
             this.snackBar.open(`Connected to the "${device.productName}" device!`, 'OK', {
-            duration: 2000,
-          });
-        } else {
-          this.connected = false;
-          this.buttonText = 'Connect to Kindle device';
-          this.snackBar.open(`The device "${device.productName}" is not supported!`, 'OK', {
-            duration: 10000,
-          });
-        }
+              duration: 2000,
+            });
+      } else {
+        this.errorState(device.productName);
+      }
+    }, data => {
+      this.errorState();
     });
-  };
+  }
+
+  processClippingsFile(changeEvent) {
+    this.processed = true;
+    const file = changeEvent.target.files[0];
+
+    if (file.name.startsWith('My Clippings') && file.name.endsWith('.txt')) {
+      console.log(file.name);
+    }
+  }
+
+  private errorState(message: string = null) {
+    this.connected = false;
+    this.buttonText = 'Connect to Kindle device';
+
+    if (message != null) {
+      this.snackBar.open(`The device "${message}" is not supported!`, 'OK', {
+        duration: 10000,
+      });
+    }
+  }
 }
 
 declare global {
