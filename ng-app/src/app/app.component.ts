@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+
+import { ClippingsComponent } from './clippings/clippings.component';
 
 @Component({
   selector: 'app-root',
@@ -11,8 +13,7 @@ export class AppComponent {
   connected = false;
   processed = false;
   buttonText = 'Connect to Kindle device';
-  documents_dir = '';
-  clippings_file = '';
+  @ViewChild(ClippingsComponent) clippings: ClippingsComponent;
 
   constructor(public snackBar: MatSnackBar) {
     navigator.usb.getDevices({filters: [{ vendorId: 0x1949 }]}).then(devices => {
@@ -50,10 +51,7 @@ export class AppComponent {
   processClippingsFile(changeEvent) {
     this.processed = true;
     const file = changeEvent.target.files[0];
-
-    if (file.name.startsWith('My Clippings') && file.name.endsWith('.txt')) {
-      console.log(file.name);
-    }
+    this.clippings.process(file);
   }
 
   private errorState(message: string = null) {

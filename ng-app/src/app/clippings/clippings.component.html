@@ -1,3 +1,15 @@
-<p>
-  clippings works!
-</p>
+<div [hidden]="!processed">
+  <!-- nvd3 #nvd3 [options]="options" [data]="data"></nvd3 -->
+  <table>
+    <tr>
+      <th *ngFor="let col of displayedColumns">
+        {{col}}
+      </th>
+    </tr>
+    <tr *ngFor="let book of values">
+      <td *ngFor="let col of displayedColumns">
+        {{book.value[col]}}
+      </td>
+    </tr>
+  </table>
+</div>

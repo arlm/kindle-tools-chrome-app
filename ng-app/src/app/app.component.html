@@ -13,7 +13,7 @@
       <label [hidden]="processed" for="clippings_file">Upload the "My Clippings.txt" file from the device</label>
       <input [hidden]="processed" type="file" id="clippings_file" name="clippings_file" accept=".txt" (change)="processClippingsFile($event)" required>
     </form>
-    <div *ngIf="processed">
+    <div>
       <app-clippings></app-clippings>
     </div>
   </div>
