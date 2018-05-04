@@ -24,7 +24,7 @@ export class ClippingsComponent implements OnInit {
   values;
   options;
 
-  displayedColumns = ['book', 'author', 'highlights', 'year'];
+  displayedColumns = ['book', 'author', 'highlights', 'month', 'year'];
 
   constructor() { }
 
@@ -33,16 +33,15 @@ export class ClippingsComponent implements OnInit {
       chart: {
         type: 'discreteBarChart',
         height: 450,
+        width: 1400,
         margin: {
           top: 20,
           right: 20,
           bottom: 50,
           left: 55
         },
-        /*
-        x: function (d) { return d.label; },
+        x: function (d) { return d.key; },
         y: function (d) { return d.value; },
-        */
         showValues: true,
         valueFormat: function (d) {
           return d3.format(',.4f')(d);
@@ -149,30 +148,35 @@ export class ClippingsComponent implements OnInit {
     const byMonth = date.group(function (d) { return d ? d.getMonth() + '.' + d.getFullYear() : ''; });
     const byYear = date.group(function (d) { return d ? d.getFullYear() : ''; });
 
-    const bookMonth = data.dimension(function (d) { return d.book + (d.date ? ' ' + d.date.getDay() + ' ' + d.date.getFullYear() : ''); });
+    // tslint:disable-next-line:max-line-length
+    const bookMonth = data.dimension(function (d) { return (d.date ? + d.date.getFullYear() + '.' + d.date.getMonth() + ' ' : '9999.99 ') + d.book; });
     const booksByMonth = bookMonth.group();
 
-    const bookYear = data.dimension(function (d) { return d.book + (d.date ? ' ' + d.date.getFullYear() : ''); });
-    const booksyByYear = bookYear.group();
+    // tslint:disable-next-line:max-line-length
+    const bookMonthGraph = data.dimension(function (d) { return (d.date ? + d.date.getFullYear() + '.' + d.date.getMonth() + ' ' : '9999.99 '); });
+    const booksByMonthGraph = bookMonthGraph.group();
 
-    const booksyByYearValues = booksyByYear.reduce(this.add, this.remove, this.init).all();
+    const booksByMonthValues = booksByMonth.reduce(this.add, this.remove, this.init).all();
+    const booksByMonthGraphValues = booksByMonthGraph.reduceCount().all();
 
-    this.data = [
+    this.data = this.data = [
       {
         key: 'Books by Year',
-        values: booksyByYearValues
+        values: booksByMonthGraphValues
       }
     ];
 
-    this.values = booksyByYearValues;
+    console.log(booksByMonthGraphValues);
 
+    this.values = booksByMonthValues;
   }
 
   add(p: any, d) {
     p.highlights++;
     p.book = d.book;
     p.author = d.author;
-    p.year = d.date ? d.date.getFullYear() : '';
+    p.month = d.date ? d.date.getMonth() : 0;
+    p.year = d.date ? d.date.getFullYear() : 0;
     return p;
   }
 
@@ -182,7 +186,24 @@ export class ClippingsComponent implements OnInit {
   }
 
   init(): any {
-    return { highlights: 0, book: '', author: '', year: 0 };
+    return { highlights: 0, book: '', author: '', month: 0, year: 0 };
+  }
+
+  addGraph(p: any, d) {
+    p.count++;
+    p.label = d.date ? d.date.getMonth + '.' + d.date.getFullYear() : '';
+    p.month = d.date ? d.date.getMonth() : 0;
+    p.year = d.date ? d.date.getFullYear() : 0;
+    return p;
+  }
+
+  removeGraph(p: any, d) {
+    p.count--;
+    return p;
+  }
+
+  initGraph(): any {
+    return { count: 0, label: '', month: 0, year: 0 };
   }
 
 }
