@@ -6,10 +6,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { MomentModule } from 'ngx-moment';
+import 'moment';
 
 import { NvD3Module } from 'ng2-nvd3';
 import 'd3';
 import 'nvd3';
+import 'd3-time-format';
 
 import { AppComponent } from './app.component';
 import { BooksComponent } from './books/books.component';

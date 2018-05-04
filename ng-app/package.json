@@ -27,7 +27,9 @@
     "zone.js": "^0.8.19",
     "ngx-moment": "^2.0.0",
     "crossfilter2": "^1.4.6",
-    "ng2-nvd3": "^2.0.0"
+    "ng2-nvd3": "^2.0.0",
+    "moment": "^2.22.1",
+    "d3-time-format": "^2.1.1"
   },
   "devDependencies": {
     "@angular/cli": "~1.7.4",

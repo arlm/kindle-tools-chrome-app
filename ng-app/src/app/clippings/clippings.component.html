@@ -1,15 +1,18 @@
 <div [hidden]="!processed">
-  <nvd3 #nvd3 [options]="options" [data]="data"></nvd3>
+  <div id="nvd3_div">
+    <nvd3 #nvd3 [options]="options" [data]="data" align="left"></nvd3>
+  </div>
   <table>
     <tr>
-      <th *ngFor="let col of displayedColumns">
-        {{col}}
-      </th>
-    </tr>
-    <tr *ngFor="let book of values">
-      <td *ngFor="let col of displayedColumns">
-        {{book.value[col]}}
-      </td>
-    </tr>
+      <tr>
+        <th *ngFor="let col of displayedColumns">
+          {{col}}
+        </th>
+      </tr>
+      <tr *ngFor="let book of values">
+        <td *ngFor="let col of displayedColumns">
+          {{book.value[col]}}
+        </td>
+      </tr>
   </table>
 </div>

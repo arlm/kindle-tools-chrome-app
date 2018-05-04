@@ -2,9 +2,12 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 
 import * as crossfilter from 'crossfilter2';
 import * as d3 from 'd3';
+import * as timeformat from 'd3-time-format';
+import * as moment from 'moment';
 
 import { Book } from '../book';
 import { NvD3Component } from 'ng2-nvd3';
+import { timeout } from 'q';
 
 @Component({
   selector: 'app-clippings',
@@ -33,26 +36,35 @@ export class ClippingsComponent implements OnInit {
       chart: {
         type: 'discreteBarChart',
         height: 450,
-        width: 1400,
         margin: {
           top: 20,
-          right: 20,
-          bottom: 50,
+          right: 50,
+          bottom: 75,
           left: 55
         },
         x: function (d) { return d.key; },
         y: function (d) { return d.value; },
         showValues: true,
         valueFormat: function (d) {
-          return d3.format(',.4f')(d);
+          return d3.format(',.0f')(d);
         },
         duration: 500,
         xAxis: {
-          axisLabel: 'X Axis'
+          axisLabel: 'Month',
+          rotateLabels: 30,
+          axisLabelDistance: -30,
+          tickFormat: function (d) {
+            const parseTime = timeformat.timeParse('%y.%m');
+            const date = parseTime(d.trim());
+            return d3.time.format('%b %y')(date);
+          }
         },
         yAxis: {
-          axisLabel: 'Y Axis',
-          axisLabelDistance: -10
+          axisLabel: 'Highlights',
+          axisLabelDistance: -10,
+          tickFormat: function (d) {
+            return d3.format(',.0f')(d);
+          }
         }
       }
     };
@@ -96,10 +108,10 @@ export class ClippingsComponent implements OnInit {
       const line1Groups = { Book: 1, Author: 3 };
 
       // tslint:disable-next-line:max-line-length
-      const line2 = /^\s*-\s*Your (Highlight|Note|Bookmark)\s*on\s*[Pp]age ([xivlcm\d-]*)?(\s*\|)?\s*([Ll]ocation|[Ll]oc\. )\s*([xivlcm\d-]*)?\s*\|\s*Added on ([^\r\n]*)/g.exec(chunck[1]);
-      const line2Groups = { Type: 1, Page: 2, Location: 5, Date: 6 };
+      const line2 = /^\s*-\s*Your (Highlight|Note|Bookmark)\s*on\s*([Pp]age )?([xivlcm\d-]*)?(\s*\|)?\s*([Ll]ocation|[Ll]oc\. )\s*([xivlcm\d-]*)?\s*\|\s*Added on ([^\r\n]*)/g.exec(chunck[1]);
+      const line2Groups = { Type: 1, Page: 2, Location: 6, Date: 7 };
 
-      const timestamp = line2 ? new Date(line2[line2Groups.Date]) : null;
+      const timestamp = line2 ? new Date(moment(line2[line2Groups.Date], 'dddd, MMMM DD, YYYY h:mm:ss A').toDate()) : null;
 
       const line3 = chunck.length >= 3 ? /^\s*(.*?)$/g.exec(chunck[2]) : null;
       const line3Groups = { Text: 1 };
@@ -142,22 +154,17 @@ export class ClippingsComponent implements OnInit {
 
   private processData(books: Book[]) {
     const data = crossfilter(books);
-    const all = data.groupAll();
-
-    const date = data.dimension(function (d) { return d.date; });
-    const byMonth = date.group(function (d) { return d ? d.getMonth() + '.' + d.getFullYear() : ''; });
-    const byYear = date.group(function (d) { return d ? d.getFullYear() : ''; });
 
     // tslint:disable-next-line:max-line-length
-    const bookMonth = data.dimension(function (d) { return (d.date ? + d.date.getFullYear() + '.' + d.date.getMonth() + ' ' : '9999.99 ') + d.book; });
+    const bookMonth = data.dimension(function (d) { return (d.date ? d.date.getFullYear() + '.' + d.date.getMonth() + ' ' : '9999.99 ') + d.book; });
     const booksByMonth = bookMonth.group();
 
     // tslint:disable-next-line:max-line-length
-    const bookMonthGraph = data.dimension(function (d) { return (d.date ? + d.date.getFullYear() + '.' + d.date.getMonth() + ' ' : '9999.99 '); });
+    const bookMonthGraph = data.dimension(function (d) { return (d.date ? moment(d.date).format('YY.MM') + ' ' : '99.99 '); });
     const booksByMonthGraph = bookMonthGraph.group();
 
     const booksByMonthValues = booksByMonth.reduce(this.add, this.remove, this.init).all();
-    const booksByMonthGraphValues = booksByMonthGraph.reduceCount().all();
+    const booksByMonthGraphValues = booksByMonthGraph.reduce(this.addGraph, this.removeGraph, this.initGraph).reduceCount().all();
 
     this.data = this.data = [
       {
@@ -166,17 +173,20 @@ export class ClippingsComponent implements OnInit {
       }
     ];
 
-    console.log(booksByMonthGraphValues);
-
     this.values = booksByMonthValues;
+
+    window.setTimeout(() => {
+      this.nvd3.updateSize();
+      this.nvd3.chart.update();
+    }, 1);
   }
 
   add(p: any, d) {
     p.highlights++;
     p.book = d.book;
     p.author = d.author;
-    p.month = d.date ? d.date.getMonth() : 0;
-    p.year = d.date ? d.date.getFullYear() : 0;
+    p.month = d.date ? moment(d.date).format('MMM') : '';
+    p.year = d.date ? moment(d.date).format('YYYY') : '';
     return p;
   }
 
@@ -186,24 +196,32 @@ export class ClippingsComponent implements OnInit {
   }
 
   init(): any {
-    return { highlights: 0, book: '', author: '', month: 0, year: 0 };
+    return { highlights: 0, book: '', author: '', month: '', year: '' };
   }
 
   addGraph(p: any, d) {
-    p.count++;
-    p.label = d.date ? d.date.getMonth + '.' + d.date.getFullYear() : '';
+    if (d.book in p.books) {
+      p.books[d.book]++;
+    } else {
+      p.books[d.book] = 1;
+    }
+
+    p.label = d.date ? moment(d.date).format('MMM YY') : '';
     p.month = d.date ? d.date.getMonth() : 0;
     p.year = d.date ? d.date.getFullYear() : 0;
     return p;
   }
 
   removeGraph(p: any, d) {
-    p.count--;
+    p.projects[d.book]--;
+    if (p.books[d.book] === 0) {
+      delete p.books[d.book];
+    }
     return p;
   }
 
   initGraph(): any {
-    return { count: 0, label: '', month: 0, year: 0 };
+    return { projects: {}, count: 0, label: '', month: 0, year: 0 };
   }
 
 }
