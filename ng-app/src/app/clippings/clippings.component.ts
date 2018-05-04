@@ -1,7 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 
 import * as crossfilter from 'crossfilter2';
-import * as d3 from 'd3';
 import * as timeformat from 'd3-time-format';
 import * as moment from 'moment';
 
@@ -22,17 +21,23 @@ export class ClippingsComponent implements OnInit {
   clippings_file = null;
   processed = false;
 
-  @ViewChild('nvd3') nvd3: NvD3Component;
-  data;
+  @ViewChild('monthly') monthly: NvD3Component;
+  @ViewChild('yearly') yearly: NvD3Component;
+
+  monthlyData;
+  monthlyOptions;
+
+  yearlyData;
+  yearlyOptions;
+
   values;
-  options;
 
   displayedColumns = ['book', 'author', 'highlights', 'month', 'year'];
 
   constructor() { }
 
   ngOnInit() {
-    this.options = {
+    this.monthlyOptions = {
       chart: {
         type: 'discreteBarChart',
         height: 450,
@@ -64,16 +69,74 @@ export class ClippingsComponent implements OnInit {
           axisLabelDistance: -10,
           tickFormat: function (d) {
             return d3.format(',.0f')(d);
+          },
+          showMaxMin: false
+        },
+        title: {
+          enable: true,
+          text: 'Books read monthly',
+          className: 'h4',
+          css: {
+            textAlign: 'center'
+          }
+        },
+        subtitle: {
+          enable: true,
+          text: 'Extracted from the Kindle highlights',
+          css: {
+            textAlign: 'center'
           }
         }
       }
     };
-    this.data = [
-      {
-        key: 'Books by Year',
-        values: []
+
+    this.yearlyOptions = {
+      chart: {
+        type: 'discreteBarChart',
+        height: 450,
+        margin: {
+          top: 20,
+          right: 50,
+          bottom: 75,
+          left: 55
+        },
+        x: function (d) { return d.key; },
+        y: function (d) { return d.value.count; },
+        showValues: true,
+        valueFormat: function (d) {
+          return d3.format(',.0f')(d);
+        },
+        duration: 500,
+        xAxis: {
+          axisLabel: 'Year',
+          axisLabelDistance: 30,
+          tickPadding: 10
+        },
+        yAxis: {
+          axisLabel: 'Books read',
+          axisLabelDistance: -10,
+          tickFormat: function (d) {
+            return d3.format(',.0f')(d);
+          },
+          showMaxMin: false
+        },
+        title: {
+          enable: true,
+          text: 'Books read yearly',
+          className: 'h4',
+          css: {
+            textAlign: 'center'
+          }
+        },
+        subtitle: {
+          enable: true,
+          text: 'Extracted from the Kindle highlights',
+          css: {
+            textAlign: 'center'
+          }
+        }
       }
-    ];
+    };
   }
 
   process(file: File) {
@@ -156,28 +219,44 @@ export class ClippingsComponent implements OnInit {
     const data = crossfilter(books);
 
     // tslint:disable-next-line:max-line-length
-    const bookMonth = data.dimension(function (d) { return (d.date ? d.date.getFullYear() + '.' + d.date.getMonth() + ' ' : '9999.99 ') + d.book; });
-    const booksByMonth = bookMonth.group();
-
-    // tslint:disable-next-line:max-line-length
     const bookMonthGraph = data.dimension(function (d) { return (d.date ? moment(d.date).format('YY.MM') + ' ' : '99.99 '); });
     const booksByMonthGraph = bookMonthGraph.group();
 
-    const booksByMonthValues = booksByMonth.reduce(this.add, this.remove, this.init).all();
     const booksByMonthGraphValues = booksByMonthGraph.reduce(this.addGraph, this.removeGraph, this.initGraph).all();
 
-    this.data = this.data = [
+    this.monthlyData = [
       {
         key: 'Books by Year',
         values: booksByMonthGraphValues
       }
     ];
 
+    // tslint:disable-next-line:max-line-length
+    const bookYearGraph = data.dimension(function (d) { return (d.date ? moment(d.date).format('YYYY') + ' ' : '9999 '); });
+    const booksByYearGraph = bookYearGraph.group();
+
+    const booksByYearGraphValues = booksByYearGraph.reduce(this.addGraph, this.removeGraph, this.initGraph).all();
+
+    this.yearlyData = [
+      {
+        key: 'Books by Year',
+        values: booksByYearGraphValues
+      }
+    ];
+
+    // tslint:disable-next-line:max-line-length
+    const bookMonth = data.dimension(function (d) { return (d.date ? d.date.getFullYear() + '.' + d.date.getMonth() + ' ' : '9999.99 ') + d.book; });
+    const booksByMonth = bookMonth.group();
+
+    const booksByMonthValues = booksByMonth.reduce(this.add, this.remove, this.init).all();
+
     this.values = booksByMonthValues;
 
     window.setTimeout(() => {
-      this.nvd3.updateSize();
-      this.nvd3.chart.update();
+      this.monthly.updateSize();
+      this.monthly.chart.update();
+      this.yearly.updateSize();
+      this.yearly.chart.update();
     }, 1);
   }
 
