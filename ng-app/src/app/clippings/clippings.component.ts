@@ -43,7 +43,7 @@ export class ClippingsComponent implements OnInit {
           left: 55
         },
         x: function (d) { return d.key; },
-        y: function (d) { return d.value; },
+        y: function (d) { return d.value.count; },
         showValues: true,
         valueFormat: function (d) {
           return d3.format(',.0f')(d);
@@ -60,7 +60,7 @@ export class ClippingsComponent implements OnInit {
           }
         },
         yAxis: {
-          axisLabel: 'Highlights',
+          axisLabel: 'Books read',
           axisLabelDistance: -10,
           tickFormat: function (d) {
             return d3.format(',.0f')(d);
@@ -164,7 +164,7 @@ export class ClippingsComponent implements OnInit {
     const booksByMonthGraph = bookMonthGraph.group();
 
     const booksByMonthValues = booksByMonth.reduce(this.add, this.remove, this.init).all();
-    const booksByMonthGraphValues = booksByMonthGraph.reduce(this.addGraph, this.removeGraph, this.initGraph).reduceCount().all();
+    const booksByMonthGraphValues = booksByMonthGraph.reduce(this.addGraph, this.removeGraph, this.initGraph).all();
 
     this.data = this.data = [
       {
@@ -187,11 +187,13 @@ export class ClippingsComponent implements OnInit {
     p.author = d.author;
     p.month = d.date ? moment(d.date).format('MMM') : '';
     p.year = d.date ? moment(d.date).format('YYYY') : '';
+
     return p;
   }
 
   remove(p: any, d) {
     p.highlights--;
+
     return p;
   }
 
@@ -209,19 +211,24 @@ export class ClippingsComponent implements OnInit {
     p.label = d.date ? moment(d.date).format('MMM YY') : '';
     p.month = d.date ? d.date.getMonth() : 0;
     p.year = d.date ? d.date.getFullYear() : 0;
+    p.count = Object.keys(p.books).length;
+
     return p;
   }
 
   removeGraph(p: any, d) {
-    p.projects[d.book]--;
+    p.books[d.book]--;
     if (p.books[d.book] === 0) {
       delete p.books[d.book];
     }
+
+    p.count = Object.keys(p.books).length;
+
     return p;
   }
 
   initGraph(): any {
-    return { projects: {}, count: 0, label: '', month: 0, year: 0 };
+    return { books: {}, count: 0, label: '', month: 0, year: 0 };
   }
 
 }
