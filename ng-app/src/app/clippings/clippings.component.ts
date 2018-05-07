@@ -7,6 +7,7 @@ import * as moment from 'moment';
 import { Book } from '../book';
 import { NvD3Component } from 'ng2-nvd3';
 import { timeout } from 'q';
+import { ViewEncapsulation } from '@angular/core';
 
 @Component({
   selector: 'app-clippings',
@@ -14,7 +15,8 @@ import { timeout } from 'q';
   styleUrls: [
     './clippings.component.css',
     '../../../node_modules/nvd3/build/nv.d3.css'
-  ]
+  ],
+  encapsulation: ViewEncapsulation.None
 })
 
 export class ClippingsComponent implements OnInit {
