@@ -1,7 +1,7 @@
 <div [hidden]="!processed">
   <div id="nvd3_div">
-    <nvd3 #yearly [options]="yearlyOptions" [data]="yearlyData" style="float: left; width: 30%;" align="left"></nvd3>
-    <nvd3 #monthly [options]="monthlyOptions" [data]="monthlyData" style="float: right; width: 70%;" align="right"></nvd3>
+    <nvd3 id="yearly" #yearly [options]="yearlyOptions" [data]="yearlyData" style="float: left; width: 30%;" align="left"></nvd3>
+    <nvd3 id="monthly" #monthly [options]="monthlyOptions" [data]="monthlyData" style="float: right; width: 70%;" align="right"></nvd3>
     <div class="clearfix"></div>
   </div>
   <table>

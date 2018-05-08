@@ -32,9 +32,19 @@ export class ClippingsComponent implements OnInit {
   yearlyData;
   yearlyOptions;
 
-  values;
+  bookByDate: crossfilter.Dimension<Book, Date>;
+  bookByTitle: crossfilter.Dimension<Book, string>;
 
-  displayedColumns = ['book', 'author', 'highlights', 'month', 'year'];
+  booksByMonth: crossfilter.Group<Book, Date, crossfilter.NaturallyOrderedValue>;
+
+  booksByMonthValues;
+  booksByYearValues;
+  booksByTitleValues;
+
+  values;
+  lastYearSelection;
+
+  displayedColumns = ['book', 'author', 'highlights'];
 
   constructor() { }
 
@@ -49,29 +59,21 @@ export class ClippingsComponent implements OnInit {
           bottom: 75,
           left: 55
         },
-        x: function (d) { return d.key; },
-        y: function (d) { return d.value.count; },
+        x: (d) => d.key,
+        y: (d) => d.value.count,
         showValues: true,
-        valueFormat: function (d) {
-          return d3.format(',.0f')(d);
-        },
+        valueFormat: (d) => d3.format(',.0f')(d),
         duration: 500,
         xAxis: {
           axisLabel: 'Month',
           rotateLabels: 30,
           axisLabelDistance: -30,
-          tickFormat: function (d) {
-            const parseTime = timeformat.timeParse('%y.%m');
-            const date = parseTime(d.trim());
-            return d3.time.format('%b %y')(date);
-          }
+          tickFormat: (d) => moment(d).format('MMM')
         },
         yAxis: {
           axisLabel: 'Books read',
           axisLabelDistance: -10,
-          tickFormat: function (d) {
-            return d3.format(',.0f')(d);
-          },
+          tickFormat: (d) => d3.format(',.0f')(d),
           showMaxMin: false
         },
         title: {
@@ -102,24 +104,21 @@ export class ClippingsComponent implements OnInit {
           bottom: 75,
           left: 55
         },
-        x: function (d) { return d.key; },
-        y: function (d) { return d.value.count; },
+        x: (d) => d.key,
+        y: (d) => d.value.count,
         showValues: true,
-        valueFormat: function (d) {
-          return d3.format(',.0f')(d);
-        },
+        valueFormat: (d) => d3.format(',.0f')(d),
         duration: 500,
         xAxis: {
           axisLabel: 'Year',
           axisLabelDistance: 30,
-          tickPadding: 10
+          tickPadding: 10,
+          tickFormat: (d) => moment(d).year()
         },
         yAxis: {
           axisLabel: 'Books read',
           axisLabelDistance: -10,
-          tickFormat: function (d) {
-            return d3.format(',.0f')(d);
-          },
+          tickFormat: (d) => d3.format(',.0f')(d),
           showMaxMin: false
         },
         title: {
@@ -220,54 +219,130 @@ export class ClippingsComponent implements OnInit {
   private processData(books: Book[]) {
     const data = crossfilter(books);
 
-    // tslint:disable-next-line:max-line-length
-    const bookMonthGraph = data.dimension(function (d) { return (d.date ? moment(d.date).format('YY.MM') + ' ' : '99.99 '); });
-    const booksByMonthGraph = bookMonthGraph.group();
+    this.bookByDate = data.dimension((d) => d.date);
+    this.bookByTitle = data.dimension((d) => d.book);
 
-    const booksByMonthGraphValues = booksByMonthGraph.reduce(this.addGraph, this.removeGraph, this.initGraph).all();
-
-    this.monthlyData = [
-      {
-        key: 'Books by Year',
-        values: booksByMonthGraphValues
-      }
-    ];
-
-    // tslint:disable-next-line:max-line-length
-    const bookYearGraph = data.dimension(function (d) { return (d.date ? moment(d.date).format('YYYY') + ' ' : '9999 '); });
-    const booksByYearGraph = bookYearGraph.group();
-
-    const booksByYearGraphValues = booksByYearGraph.reduce(this.addGraph, this.removeGraph, this.initGraph).all();
-
-    this.yearlyData = [
-      {
-        key: 'Books by Year',
-        values: booksByYearGraphValues
-      }
-    ];
-
-    // tslint:disable-next-line:max-line-length
-    const bookMonth = data.dimension(function (d) { return (d.date ? d.date.getFullYear() + '.' + d.date.getMonth() + ' ' : '9999.99 ') + d.book; });
-    const booksByMonth = bookMonth.group();
-
-    const booksByMonthValues = booksByMonth.reduce(this.add, this.remove, this.init).all();
-
-    this.values = booksByMonthValues;
+    this.updateMonthlyData(null, null);
+    this.updateYearlyData();
+    this.updateTable(null);
 
     window.setTimeout(() => {
       this.monthly.updateSize();
       this.monthly.chart.update();
       this.yearly.updateSize();
       this.yearly.chart.update();
+      this.loadCharts();
     }, 1);
+  }
+
+  private updateTable(filterFunc: (d: any) => boolean) {
+    const booksByTitle = this.bookByTitle.group();
+    this.booksByTitleValues = booksByTitle.reduce(this.add, this.remove, this.init);
+    this.values = filterFunc ? this.booksByTitleValues.all().filter(filterFunc) : this.booksByTitleValues.all();
+    console.log(this.values);
+    console.log(this.monthlyData[0].values);
+  }
+
+  private updateYearlyData() {
+    const booksByYear = this.bookByDate.group(d3.time.year);
+    this.booksByYearValues = booksByYear.reduce(this.addGraph, this.removeGraph, this.initGraph);
+
+    this.yearlyData = [
+      {
+        key: 'Books by Year',
+        values: this.booksByYearValues.all()
+      }
+    ];
+  }
+
+  private updateMonthlyData(filterFunc: (d: any) => boolean, label: string) {
+    this.booksByMonth = this.bookByDate.group(d3.time.month);
+    this.booksByMonthValues = this.booksByMonth.reduce(this.addGraph, this.removeGraph, this.initGraph);
+    const data = filterFunc ? this.booksByMonthValues.all().filter(filterFunc) : this.booksByMonthValues.all();
+    label = !label ? 'Months' : label;
+
+    window.setTimeout(() => {
+      if (filterFunc) {
+        this.monthly.chart.xAxis.tickFormat((d) => moment(d).format('MMM'));
+        this.monthly.chart.xAxis.rotateLabels(30);
+      } else {
+        this.monthly.chart.xAxis.tickFormat((d) => moment(d).format('MMM YYYY'));
+        this.monthly.chart.xAxis.rotateLabels(45);
+      }
+
+      this.monthly.chart.xAxis.axisLabel(label);
+      this.monthly.chart.update();
+    }, 1);
+
+    this.monthlyData = [
+      {
+        key: 'Books by Year',
+        values: data
+      }
+    ];
+
+  }
+
+  loadCharts() {
+    const monthlyG = this.monthly.svg.select('g');
+
+    const monthlyReset = this.addResetButton(monthlyG, (button) => {
+      this.lastYearSelection ?
+        this.updateTable((d) => d.value.book in this.lastYearSelection.data.value.books) :
+        this.updateTable(null);
+      button.style('display', 'none');
+    });
+
+    this.monthly.chart.discretebar.dispatch.on('elementClick', (e) => {
+      this.updateTable((d) => d.value.book in e.data.value.books);
+      monthlyReset.style('display', 'block');
+    });
+
+    const yearlyG = this.yearly.svg.select('g');
+
+    const yearlyReset = this.addResetButton(yearlyG, (button) => {
+      this.updateMonthlyData(null, null);
+      this.updateTable(null);
+      this.lastYearSelection = null;
+      button.style('display', 'none');
+      monthlyReset.style('display', 'none');
+    });
+
+    this.yearly.chart.discretebar.dispatch.on('elementClick', (e) => {
+      this.lastYearSelection = e;
+      const date = new Date(e.data.key);
+      this.updateMonthlyData((d) => d.key.getFullYear() === date.getFullYear(), `Months (${date.getFullYear()})`);
+      this.updateTable((d) => d.value.book in e.data.value.books);
+      yearlyReset.style('display', 'block');
+    });
+  }
+
+  updateYearlyChart(g: d3.Selection<any>) {
+    const reset = g.selectAll('.reset');
+
+  }
+
+  updateMonthlyChart(g: d3.Selection<any>) {
+    const reset = g.selectAll('.reset');
+  }
+
+  addResetButton(g: d3.Selection<any>, onClick: (button: any) => void): any {
+    const reset = g.append('text')
+      .attr('class', 'reset')
+      .attr('y', 10)
+      .attr('x', 20)
+      .style('display', 'none')
+      .text('reset')
+      .on('click', () => onClick(reset));
+
+    return reset;
   }
 
   add(p: any, d) {
     p.highlights++;
     p.book = d.book;
     p.author = d.author;
-    p.month = d.date ? moment(d.date).format('MMM') : '';
-    p.year = d.date ? moment(d.date).format('YYYY') : '';
+    p.date = d.date;
 
     return p;
   }
@@ -279,7 +354,7 @@ export class ClippingsComponent implements OnInit {
   }
 
   init(): any {
-    return { highlights: 0, book: '', author: '', month: '', year: '' };
+    return { highlights: 0, book: '', author: '', date: Date };
   }
 
   addGraph(p: any, d) {
