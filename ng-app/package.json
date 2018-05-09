@@ -31,7 +31,9 @@
     "moment": "^2.22.1",
     "d3-time-format": "^2.1.1",
     "nvd3": "^1.8.6",
-    "d3": "^3.4.4"
+    "d3": "^3.4.4",
+    "font-awesome": "^4.7.0",
+    "angular-font-awesome": "^3.1.2"
   },
   "devDependencies": {
     "@angular/cli": "~1.7.4",

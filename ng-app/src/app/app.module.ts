@@ -13,6 +13,8 @@ import 'd3';
 import 'nvd3';
 import 'd3-time-format';
 
+import { AngularFontAwesomeModule } from 'angular-font-awesome';
+
 import { AppComponent } from './app.component';
 import { BooksComponent } from './books/books.component';
 import { ClippingsComponent } from './clippings/clippings.component';
@@ -30,7 +32,8 @@ import { ClippingsComponent } from './clippings/clippings.component';
     MatSnackBarModule,
     BrowserAnimationsModule,
     MomentModule,
-    NvD3Module
+    NvD3Module,
+    AngularFontAwesomeModule
   ],
   providers: [],
   bootstrap: [AppComponent]

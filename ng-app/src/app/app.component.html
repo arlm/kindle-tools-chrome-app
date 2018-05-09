@@ -7,9 +7,34 @@
 
   <p></p>
 
-  <div>
+  <div class="instructions">
+
+    <ol>
+      <li>
+        Connect your Kindle device on the computer's USB port
+      </li>
+      <li>Click on the
+        <i>"Choose file"</i> button</li>
+      <li>
+        Select the clippings file on the Kindle device
+      </li>
+    </ol>
+  </div>
+  <div class="form">
     <form>
-      <label for="clippings_file">Upload the "My Clippings.txt" file from the device</label>
+      <label for="clippings_file">
+        <fa name="tablet"></fa>
+        <fa name="arrow-right"></fa>
+        <fa name="usb"></fa>
+        &nbsp;
+        <fa name="angle-double-right"></fa>
+        &nbsp;
+        <fa name="folder-open-o"></fa>
+        <i>documents/My Clippings.txt</i>
+        &nbsp;
+        <fa name="angle-double-right"></fa>
+        &nbsp;
+      </label>
       <input type="file" id="clippings_file" name="clippings_file" accept=".txt" (change)="processClippingsFile($event)" required>
     </form>
     <div>
