@@ -3,7 +3,7 @@
 yarn build --base-href=/kindle-tools-chrome-app/
 git add dist
 git status
-git commit -m $1
+git commit -m "$1"
 cd ..
-echo "git subtree push --prefix=ng-app/dist/ origin gh-pages"
+git subtree push --prefix=ng-app/dist/ origin gh-pages
 cd -
